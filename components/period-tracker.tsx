@@ -1,32 +1,55 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { CalendarHeart, Droplets, Moon, Sparkles, Sun, Zap } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { CalendarHeart, Droplets, Moon, Sparkles, Sun, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const cyclePhases = [
-  { name: 'Menstrual', days: '1-5', color: '#ff9bbc', icon: Droplets },
-  { name: 'Follicular', days: '6-13', color: '#ffb347', icon: Sun },
-  { name: 'Ovulation', days: '14-16', color: '#87ceeb', icon: Sparkles },
-  { name: 'Luteal', days: '17-28', color: '#dda0dd', icon: Moon },
+  { name: 'Menstrual', days: '1-5', color: '#ff9bbc', icon: Droplets, description: 'Rest and gentle self-care' },
+  { name: 'Follicular', days: '6-13', color: '#ffb347', icon: Sun, description: 'Energy levels rising' },
+  { name: 'Ovulation', days: '14-16', color: '#87ceeb', icon: Sparkles, description: 'Peak energy and focus' },
+  { name: 'Luteal', days: '17-28', color: '#dda0dd', icon: Moon, description: 'Time for reflection' },
 ]
 
-const symptoms = [
-  { label: 'Cramps', active: true },
-  { label: 'Headache', active: false },
-  { label: 'Mood Swings', active: true },
-  { label: 'Bloating', active: false },
-  { label: 'Fatigue', active: true },
-  { label: 'Cravings', active: true },
+const symptomOptions = [
+  'Cramps', 'Headache', 'Mood Changes', 'Bloating', 'Fatigue', 'Cravings', 'Back Pain', 'Tender Breasts'
 ]
+
+function getPhaseFromDay(day: number) {
+  if (day >= 1 && day <= 5) return 0
+  if (day >= 6 && day <= 13) return 1
+  if (day >= 14 && day <= 16) return 2
+  return 3
+}
 
 export function PeriodTracker() {
-  const [currentDay] = useState(18)
-  const cycleLength = 28
-  const nextPeriod = 10
+  const [currentDay, setCurrentDay] = useState(14)
+  const [cycleLength, setCycleLength] = useState(28)
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([])
+  const [lastPeriodDate] = useState(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000))
+  
+  const currentPhaseIndex = useMemo(() => getPhaseFromDay(currentDay), [currentDay])
+  const currentPhase = cyclePhases[currentPhaseIndex]
+  
+  const daysUntilNextPeriod = useMemo(() => {
+    return Math.max(0, cycleLength - currentDay)
+  }, [cycleLength, currentDay])
   
   const progress = (currentDay / cycleLength) * 100
-  const currentPhase = cyclePhases[3] // Luteal phase for demo
+  
+  const toggleSymptom = useCallback((symptom: string) => {
+    setSelectedSymptoms(prev => 
+      prev.includes(symptom) 
+        ? prev.filter(s => s !== symptom)
+        : [...prev, symptom]
+    )
+  }, [])
+  
+  const handleDayChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const day = Math.min(Math.max(1, parseInt(e.target.value) || 1), cycleLength)
+    setCurrentDay(day)
+  }, [cycleLength])
   
   return (
     <section className="py-24 px-4">
@@ -38,32 +61,27 @@ export function PeriodTracker() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-4"
-          >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-4">
             <CalendarHeart className="w-4 h-4 text-primary" />
             <span className="text-sm text-muted-foreground">Cycle Awareness</span>
-          </motion.div>
+          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-            AI <span className="gradient-text">Period Tracker</span>
+            <span className="gradient-text">Period Tracker</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Beautiful cycle visualization with AI-powered predictions and personalized insights for every phase of your journey.
+            Understand your cycle with visual tracking and personalized insights for every phase.
           </p>
         </motion.div>
         
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           {/* Circular Tracker */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             className="glass-card rounded-3xl p-8 flex flex-col items-center"
           >
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80">
+            <div className="relative w-64 h-64 sm:w-72 sm:h-72">
               {/* Background circle */}
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle
@@ -75,7 +93,7 @@ export function PeriodTracker() {
                   strokeWidth="8"
                   className="text-muted/20"
                 />
-                <motion.circle
+                <circle
                   cx="50"
                   cy="50"
                   r="45"
@@ -84,10 +102,6 @@ export function PeriodTracker() {
                   strokeWidth="8"
                   strokeLinecap="round"
                   strokeDasharray={`${progress * 2.83} 283`}
-                  initial={{ strokeDasharray: '0 283' }}
-                  whileInView={{ strokeDasharray: `${progress * 2.83} 283` }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.5, ease: 'easeOut' }}
                 />
                 <defs>
                   <linearGradient id="cycleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -100,67 +114,42 @@ export function PeriodTracker() {
               
               {/* Center content */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="text-center"
-                >
-                  <div className="text-5xl sm:text-6xl font-bold gradient-text">Day {currentDay}</div>
-                  <div className="text-muted-foreground mt-2">{currentPhase.name} Phase</div>
-                </motion.div>
+                <div className="text-5xl sm:text-6xl font-bold gradient-text">Day {currentDay}</div>
+                <div className="text-muted-foreground mt-2 flex items-center gap-2">
+                  <currentPhase.icon className="w-4 h-4" style={{ color: currentPhase.color }} />
+                  {currentPhase.name} Phase
+                </div>
               </div>
-              
-              {/* Phase indicators */}
-              {cyclePhases.map((phase, index) => {
-                const angle = (index * 90 - 45) * (Math.PI / 180)
-                const radius = 130
-                const x = 50 + radius * Math.cos(angle)
-                const y = 50 + radius * Math.sin(angle)
-                
-                return (
-                  <motion.div
-                    key={phase.name}
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5 + index * 0.1 }}
-                    className="absolute"
-                    style={{
-                      left: `${x}%`,
-                      top: `${y}%`,
-                      transform: 'translate(-50%, -50%)',
-                    }}
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.2 }}
-                      className="w-10 h-10 rounded-full flex items-center justify-center glass-card"
-                      style={{ backgroundColor: `${phase.color}40` }}
-                    >
-                      <phase.icon className="w-5 h-5" style={{ color: phase.color }} />
-                    </motion.div>
-                  </motion.div>
-                )
-              })}
             </div>
             
-            {/* Countdown */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-              className="mt-8 text-center"
-            >
-              <div className="glass-card rounded-2xl px-8 py-4 inline-flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-rose flex items-center justify-center animate-pulse-glow">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="text-2xl font-bold gradient-text">{nextPeriod} days</div>
-                  <div className="text-sm text-muted-foreground">until next period</div>
-                </div>
+            {/* Day selector */}
+            <div className="w-full mt-8">
+              <label className="text-sm text-muted-foreground mb-2 block">Adjust current day:</label>
+              <input
+                type="range"
+                min={1}
+                max={cycleLength}
+                value={currentDay}
+                onChange={(e) => setCurrentDay(Number(e.target.value))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-muted/30"
+                style={{
+                  background: `linear-gradient(to right, #ffb6d9 0%, #d4b8ff ${progress}%, #e5e5e5 ${progress}%, #e5e5e5 100%)`,
+                }}
+              />
+              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                <span>Day 1</span>
+                <span>Day {cycleLength}</span>
               </div>
-            </motion.div>
+            </div>
+            
+            {/* Next period countdown */}
+            <div className="mt-6 glass-card rounded-2xl px-6 py-4 text-center w-full">
+              <div className="text-sm text-muted-foreground mb-1">Next period in</div>
+              <div className="text-2xl font-bold gradient-text">{daysUntilNextPeriod} days</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Estimated: {new Date(Date.now() + daysUntilNextPeriod * 24 * 60 * 60 * 1000).toLocaleDateString()}
+              </div>
+            </div>
           </motion.div>
           
           {/* Info Cards */}
@@ -175,11 +164,10 @@ export function PeriodTracker() {
               <h3 className="text-lg font-semibold mb-4">Cycle Phases</h3>
               <div className="space-y-3">
                 {cyclePhases.map((phase, index) => (
-                  <motion.div
+                  <div
                     key={phase.name}
-                    whileHover={{ x: 5 }}
                     className={`flex items-center gap-4 p-3 rounded-xl transition-all ${
-                      phase.name === currentPhase.name
+                      index === currentPhaseIndex
                         ? 'bg-gradient-to-r from-primary/20 to-rose/20 border border-primary/30'
                         : 'hover:bg-white/10'
                     }`}
@@ -194,12 +182,12 @@ export function PeriodTracker() {
                       <div className="font-medium">{phase.name}</div>
                       <div className="text-xs text-muted-foreground">Days {phase.days}</div>
                     </div>
-                    {phase.name === currentPhase.name && (
+                    {index === currentPhaseIndex && (
                       <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
                         Current
                       </span>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </motion.div>
@@ -209,26 +197,31 @@ export function PeriodTracker() {
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
               className="glass-card rounded-3xl p-6"
             >
               <h3 className="text-lg font-semibold mb-4">Log Symptoms</h3>
               <div className="flex flex-wrap gap-2">
-                {symptoms.map((symptom) => (
-                  <motion.button
-                    key={symptom.label}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                {symptomOptions.map((symptom) => (
+                  <button
+                    key={symptom}
+                    onClick={() => toggleSymptom(symptom)}
                     className={`px-4 py-2 rounded-full text-sm transition-all ${
-                      symptom.active
+                      selectedSymptoms.includes(symptom)
                         ? 'bg-gradient-to-r from-primary to-rose text-white'
                         : 'glass hover:bg-white/20'
                     }`}
                   >
-                    {symptom.label}
-                  </motion.button>
+                    {selectedSymptoms.includes(symptom) && <Check className="w-3 h-3 inline mr-1" />}
+                    {symptom}
+                  </button>
                 ))}
               </div>
+              {selectedSymptoms.length > 0 && (
+                <Button className="w-full mt-4 bg-gradient-to-r from-primary to-rose text-white rounded-xl">
+                  Save Symptoms ({selectedSymptoms.length})
+                </Button>
+              )}
             </motion.div>
             
             {/* AI Insight */}
@@ -236,7 +229,7 @@ export function PeriodTracker() {
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.2 }}
               className="glass-card rounded-3xl p-6 bg-gradient-to-br from-lavender/20 to-soft-pink/20"
             >
               <div className="flex items-start gap-4">
@@ -244,9 +237,15 @@ export function PeriodTracker() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-2">AI Insight</h3>
+                  <h3 className="font-semibold mb-2">Phase Insight</h3>
                   <p className="text-sm text-muted-foreground">
-                    {"You're in your luteal phase! Energy levels may dip this week. Consider gentle activities like yoga and prioritize rest. Your body is preparing for the next cycle. 💜"}
+                    {currentPhase.description}. {currentPhaseIndex === 3 
+                      ? "Energy levels may dip this week. Consider gentle activities like yoga and prioritize rest."
+                      : currentPhaseIndex === 2 
+                      ? "This is your peak energy time. Great for important meetings and physical activities."
+                      : currentPhaseIndex === 1
+                      ? "Your energy is building. Perfect time to start new projects or habits."
+                      : "Focus on rest and comfort. Warm drinks and light stretching can help."}
                   </p>
                 </div>
               </div>

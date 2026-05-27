@@ -1,39 +1,47 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { Users, Heart, MessageCircle, Shield, Sparkles } from 'lucide-react'
+import { Users, Heart, MessageCircle, Shield, Send } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Button } from '@/components/ui/button'
 
 const communityCards = [
   {
     title: 'Anxiety Support',
-    members: '12.5K',
-    posts: '2.3K',
-    color: 'from-lavender to-primary',
     description: 'A safe space to share and find support',
+    color: 'from-lavender to-primary',
   },
   {
     title: 'Pregnancy Journey',
-    members: '8.2K',
-    posts: '1.8K',
-    color: 'from-soft-pink to-rose',
     description: 'Connect with other expecting mothers',
+    color: 'from-soft-pink to-rose',
   },
   {
     title: 'Self-Care Circle',
-    members: '15.7K',
-    posts: '3.1K',
-    color: 'from-peach to-soft-pink',
     description: 'Share tips and celebrate small wins',
+    color: 'from-peach to-soft-pink',
   },
 ]
 
-const supportMessages = [
-  { user: 'Luna', message: "You're not alone in this journey 💜", time: '2m ago' },
-  { user: 'Sofia', message: "Sending you so much love today ✨", time: '5m ago' },
-  { user: 'Emma', message: "Remember to be gentle with yourself 🌸", time: '8m ago' },
+const initialMessages = [
+  { user: 'Luna', message: "You are not alone in this journey", time: 'Just now' },
+  { user: 'Sofia', message: "Sending you support today", time: '2m ago' },
+  { user: 'Emma', message: "Remember to be gentle with yourself", time: '5m ago' },
 ]
 
 export function CommunitySection() {
+  const [supportMessages, setSupportMessages] = useState(initialMessages)
+  const [newMessage, setNewMessage] = useState('')
+  
+  const handleSendSupport = useCallback(() => {
+    if (!newMessage.trim()) return
+    setSupportMessages(prev => [
+      { user: 'You', message: newMessage, time: 'Just now' },
+      ...prev.slice(0, 4)
+    ])
+    setNewMessage('')
+  }, [newMessage])
+  
   return (
     <section id="community" className="py-24 px-4">
       <div className="max-w-7xl mx-auto">
@@ -44,15 +52,10 @@ export function CommunitySection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-4"
-          >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-4">
             <Users className="w-4 h-4 text-primary" />
             <span className="text-sm text-muted-foreground">Safe Space</span>
-          </motion.div>
+          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
             Supportive <span className="gradient-text">Community</span>
           </h2>
@@ -71,36 +74,21 @@ export function CommunitySection() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ x: 10 }}
-                className="glass-card rounded-2xl p-6 cursor-pointer group"
+                className="glass-card rounded-2xl p-6 cursor-pointer group hover:bg-white/10 transition-colors"
               >
                 <div className="flex items-start gap-4">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center shrink-0`}>
                     <Users className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
                       {card.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-3">{card.description}</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-primary" />
-                        {card.members} members
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-4 h-4 text-rose" />
-                        {card.posts} posts
-                      </span>
-                    </div>
+                    <p className="text-sm text-muted-foreground">{card.description}</p>
                   </div>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    className="text-primary"
-                  >
+                  <span className="text-muted-foreground group-hover:text-primary transition-colors">
                     →
-                  </motion.div>
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -133,14 +121,10 @@ export function CommunitySection() {
               Support Wall
             </h3>
             
-            <div className="space-y-4">
+            <div className="space-y-4 mb-4">
               {supportMessages.map((msg, index) => (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
                   className="glass rounded-2xl p-4"
                 >
                   <div className="flex items-center gap-3 mb-2">
@@ -153,18 +137,28 @@ export function CommunitySection() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">{msg.message}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
             
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full mt-4 py-3 rounded-xl glass hover:bg-white/20 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-primary" />
-              Send Support
-            </motion.button>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendSupport()}
+                placeholder="Send encouragement..."
+                className="flex-1 px-4 py-2 rounded-xl glass bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <Button
+                onClick={handleSendSupport}
+                disabled={!newMessage.trim()}
+                size="sm"
+                className="bg-gradient-to-r from-primary to-rose text-white rounded-xl"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
           </motion.div>
         </div>
       </div>

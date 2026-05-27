@@ -1,8 +1,9 @@
 "use client"
 
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
-import { Flower2, Heart, Brain, Wind, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Flower2, Heart, Brain, Wind, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const meditationCards = [
   { title: 'Morning Calm', duration: '10 min', category: 'Meditation', gradient: 'from-soft-pink to-lavender', icon: Flower2 },
@@ -20,40 +21,77 @@ const affirmations = [
 ]
 
 export function SelfCareSection() {
-  const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale')
+  const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale' | 'rest'>('rest')
   const [breathCount, setBreathCount] = useState(0)
   const [currentAffirmation, setCurrentAffirmation] = useState(0)
   const [isBreathing, setIsBreathing] = useState(false)
+  const [breathTimer, setBreathTimer] = useState(0)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
   
   useEffect(() => {
-    if (!isBreathing) return
+    if (!isBreathing) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      return
+    }
     
-    const phases = [
-      { phase: 'inhale' as const, duration: 4000 },
-      { phase: 'hold' as const, duration: 4000 },
-      { phase: 'exhale' as const, duration: 4000 },
+    const phases: Array<{ phase: 'inhale' | 'hold' | 'exhale'; duration: number }> = [
+      { phase: 'inhale', duration: 4 },
+      { phase: 'hold', duration: 4 },
+      { phase: 'exhale', duration: 4 },
     ]
     
     let phaseIndex = 0
-    const runPhase = () => {
-      setBreathPhase(phases[phaseIndex].phase)
-      setBreathCount((prev) => prev + 1)
-      phaseIndex = (phaseIndex + 1) % phases.length
+    let secondsInPhase = 0
+    
+    setBreathPhase(phases[0].phase)
+    setBreathTimer(phases[0].duration)
+    
+    intervalRef.current = setInterval(() => {
+      secondsInPhase++
+      const currentPhaseDuration = phases[phaseIndex].duration
+      
+      setBreathTimer(currentPhaseDuration - secondsInPhase)
+      
+      if (secondsInPhase >= currentPhaseDuration) {
+        secondsInPhase = 0
+        phaseIndex = (phaseIndex + 1) % phases.length
+        setBreathPhase(phases[phaseIndex].phase)
+        setBreathTimer(phases[phaseIndex].duration)
+        
+        if (phaseIndex === 0) {
+          setBreathCount(prev => prev + 1)
+        }
+      }
+    }, 1000)
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
     }
-    
-    runPhase()
-    const interval = setInterval(runPhase, 4000)
-    
-    return () => clearInterval(interval)
   }, [isBreathing])
   
-  const nextAffirmation = () => {
-    setCurrentAffirmation((prev) => (prev + 1) % affirmations.length)
-  }
+  const toggleBreathing = useCallback(() => {
+    if (isBreathing) {
+      setIsBreathing(false)
+      setBreathPhase('rest')
+      setBreathTimer(0)
+    } else {
+      setIsBreathing(true)
+      setBreathCount(0)
+    }
+  }, [isBreathing])
   
-  const prevAffirmation = () => {
+  const nextAffirmation = useCallback(() => {
+    setCurrentAffirmation((prev) => (prev + 1) % affirmations.length)
+  }, [])
+  
+  const prevAffirmation = useCallback(() => {
     setCurrentAffirmation((prev) => (prev - 1 + affirmations.length) % affirmations.length)
-  }
+  }, [])
   
   return (
     <section className="py-24 px-4">
@@ -65,15 +103,10 @@ export function SelfCareSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-4"
-          >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-4">
             <Flower2 className="w-4 h-4 text-primary" />
             <span className="text-sm text-muted-foreground">Inner Peace</span>
-          </motion.div>
+          </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
             Self-Care & <span className="gradient-text">Mental Wellness</span>
           </h2>
@@ -99,8 +132,7 @@ export function SelfCareSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  className={`relative overflow-hidden rounded-2xl p-6 cursor-pointer bg-gradient-to-br ${card.gradient} text-white`}
+                  className={`relative overflow-hidden rounded-2xl p-6 cursor-pointer bg-gradient-to-br ${card.gradient} text-white group hover:shadow-lg transition-shadow`}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                   <card.icon className="w-8 h-8 mb-4" />
@@ -110,11 +142,11 @@ export function SelfCareSection() {
                     <span>•</span>
                     <span>{card.duration}</span>
                   </div>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileHover={{ width: '100%' }}
-                    className="absolute bottom-0 left-0 h-1 bg-white/30"
-                  />
+                  <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                      <Play className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -130,49 +162,58 @@ export function SelfCareSection() {
             <h3 className="text-lg font-semibold mb-6">Breathing Exercise</h3>
             
             <div className="relative w-48 h-48 mb-6">
-              <motion.div
-                animate={{
-                  scale: breathPhase === 'inhale' ? 1.3 : breathPhase === 'hold' ? 1.3 : 1,
-                }}
-                transition={{ duration: 4, ease: 'easeInOut' }}
-                className="absolute inset-0 rounded-full bg-gradient-to-br from-lavender/30 to-soft-pink/30 blur-xl"
+              <div 
+                className={`absolute inset-0 rounded-full transition-all duration-1000 ${
+                  breathPhase === 'inhale' ? 'scale-110 bg-lavender/30' : 
+                  breathPhase === 'hold' ? 'scale-110 bg-primary/20' : 
+                  breathPhase === 'exhale' ? 'scale-90 bg-soft-pink/30' :
+                  'scale-100 bg-muted/20'
+                }`}
               />
-              <motion.div
-                animate={{
-                  scale: breathPhase === 'inhale' ? 1.2 : breathPhase === 'hold' ? 1.2 : 1,
-                }}
-                transition={{ duration: 4, ease: 'easeInOut' }}
-                className="absolute inset-4 rounded-full bg-gradient-to-br from-primary/20 to-rose/20"
+              <div 
+                className={`absolute inset-4 rounded-full transition-all duration-1000 ${
+                  breathPhase === 'inhale' ? 'scale-105 bg-primary/20' : 
+                  breathPhase === 'hold' ? 'scale-105 bg-lavender/30' : 
+                  breathPhase === 'exhale' ? 'scale-95 bg-rose/20' :
+                  'scale-100 bg-muted/10'
+                }`}
               />
               <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div
-                  animate={{
-                    scale: breathPhase === 'inhale' ? 1.1 : breathPhase === 'hold' ? 1.1 : 0.9,
-                  }}
-                  transition={{ duration: 4, ease: 'easeInOut' }}
-                  className="w-24 h-24 rounded-full glass-card flex flex-col items-center justify-center"
-                >
-                  <span className="text-2xl font-bold gradient-text capitalize">{breathPhase}</span>
-                </motion.div>
+                <div className="w-24 h-24 rounded-full glass-card flex flex-col items-center justify-center">
+                  <span className="text-xl font-bold gradient-text capitalize">
+                    {breathPhase === 'rest' ? 'Ready' : breathPhase}
+                  </span>
+                  {isBreathing && (
+                    <span className="text-2xl font-bold text-primary">{breathTimer}s</span>
+                  )}
+                </div>
               </div>
             </div>
             
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsBreathing(!isBreathing)}
-              className={`px-8 py-3 rounded-full font-medium transition-all ${
+            <Button
+              onClick={toggleBreathing}
+              className={`px-8 py-3 rounded-full font-medium ${
                 isBreathing
-                  ? 'bg-muted text-muted-foreground'
-                  : 'bg-gradient-to-r from-primary to-rose text-white glow-sm'
+                  ? 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  : 'bg-gradient-to-r from-primary to-rose text-white'
               }`}
             >
-              {isBreathing ? 'Pause' : 'Start Breathing'}
-            </motion.button>
+              {isBreathing ? (
+                <>
+                  <Pause className="w-4 h-4 mr-2" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Breathing
+                </>
+              )}
+            </Button>
             
             {breathCount > 0 && (
               <div className="mt-4 text-sm text-muted-foreground">
-                {Math.floor(breathCount / 3)} breaths completed
+                {breathCount} breath cycle{breathCount !== 1 ? 's' : ''} completed
               </div>
             )}
           </motion.div>
@@ -186,41 +227,30 @@ export function SelfCareSection() {
           transition={{ delay: 0.2 }}
           className="mt-8 glass-card rounded-3xl p-8 bg-gradient-to-br from-soft-pink/20 via-lavender/20 to-peach/20"
         >
-          <div className="flex items-center gap-2 justify-center mb-6">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">Daily Affirmations</h3>
-          </div>
+          <h3 className="text-lg font-semibold text-center mb-6">Daily Affirmations</h3>
           
           <div className="flex items-center justify-center gap-6">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+            <button
               onClick={prevAffirmation}
-              className="p-3 rounded-full glass-card"
+              className="p-3 rounded-full glass-card hover:bg-white/20 transition-colors"
+              aria-label="Previous affirmation"
             >
               <ChevronLeft className="w-5 h-5" />
-            </motion.button>
+            </button>
             
-            <motion.div
-              key={currentAffirmation}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="text-center max-w-md"
-            >
+            <div className="text-center max-w-md min-h-[60px] flex items-center justify-center">
               <p className="text-xl sm:text-2xl font-medium gradient-text">
                 &ldquo;{affirmations[currentAffirmation]}&rdquo;
               </p>
-            </motion.div>
+            </div>
             
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+            <button
               onClick={nextAffirmation}
-              className="p-3 rounded-full glass-card"
+              className="p-3 rounded-full glass-card hover:bg-white/20 transition-colors"
+              aria-label="Next affirmation"
             >
               <ChevronRight className="w-5 h-5" />
-            </motion.button>
+            </button>
           </div>
           
           {/* Dots */}
@@ -229,10 +259,11 @@ export function SelfCareSection() {
               <button
                 key={index}
                 onClick={() => setCurrentAffirmation(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
+                aria-label={`Go to affirmation ${index + 1}`}
+                className={`h-2 rounded-full transition-all ${
                   index === currentAffirmation
                     ? 'w-6 bg-gradient-to-r from-primary to-rose'
-                    : 'bg-muted-foreground/30'
+                    : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
                 }`}
               />
             ))}

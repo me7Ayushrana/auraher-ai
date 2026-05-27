@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Sparkles, Heart, Instagram, Twitter, Facebook, Mail } from 'lucide-react'
+import { Sparkles, Heart, Instagram, Twitter, Linkedin, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const footerLinks = {
@@ -15,7 +15,7 @@ const footerLinks = {
 const socialLinks = [
   { icon: Instagram, href: '#', label: 'Instagram' },
   { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Facebook, href: '#', label: 'Facebook' },
+  { icon: Linkedin, href: '#', label: 'LinkedIn' },
   { icon: Mail, href: '#', label: 'Email' },
 ]
 
@@ -33,40 +33,32 @@ export function Footer() {
           viewport={{ once: true }}
           className="glass-card rounded-3xl p-8 sm:p-12 text-center mb-16 bg-gradient-to-br from-soft-pink/20 via-lavender/20 to-peach/20"
         >
-          <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-rose flex items-center justify-center mx-auto mb-6 glow"
-          >
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-rose flex items-center justify-center mx-auto mb-6">
             <Heart className="w-8 h-8 text-white" />
-          </motion.div>
+          </div>
           
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             Start Your <span className="gradient-text">Wellness Journey</span> Today
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-            Join millions of women who have transformed their lives with AuraHer AI. Your personalized wellness companion awaits.
+            Join women who are transforming their lives with AuraHer AI. Your personalized wellness companion awaits.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-primary to-rose hover:opacity-90 text-white rounded-full px-8 py-6 text-lg glow"
-              >
-                Get Started Free
-                <Sparkles className="ml-2 w-5 h-5" />
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                size="lg"
-                variant="outline"
-                className="rounded-full px-8 py-6 text-lg border-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
-              >
-                Download App
-              </Button>
-            </motion.div>
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-primary to-rose hover:opacity-90 text-white rounded-full px-8 py-6 text-lg"
+            >
+              Get Started Free
+              <Sparkles className="ml-2 w-5 h-5" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full px-8 py-6 text-lg border-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5"
+            >
+              Download App
+            </Button>
           </div>
         </motion.div>
         
@@ -87,29 +79,21 @@ export function Footer() {
             {/* Social Links */}
             <div className="flex gap-3">
               {socialLinks.map((social) => (
-                <motion.a
+                <a
                   key={social.label}
                   href={social.href}
-                  whileHover={{ scale: 1.1, y: -3 }}
-                  whileTap={{ scale: 0.9 }}
                   className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-primary/20 transition-colors"
                   aria-label={social.label}
                 >
                   <social.icon className="w-5 h-5" />
-                </motion.a>
+                </a>
               ))}
             </div>
           </div>
           
           {/* Links */}
-          {Object.entries(footerLinks).map(([category, links], index) => (
-            <motion.div
-              key={category}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-            >
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
               <h3 className="font-semibold mb-4">{category}</h3>
               <ul className="space-y-3">
                 {links.map((link) => (
@@ -123,14 +107,14 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </motion.div>
+            </div>
           ))}
         </div>
         
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2026 AuraHer AI. Made with 💜 for women everywhere.
+            © 2026 AuraHer AI. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
